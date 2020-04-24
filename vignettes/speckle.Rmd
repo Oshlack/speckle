@@ -1,0 +1,348 @@
+---
+author: "Belinda Phipson"
+title: "speckle: statistical methods for analysing single cell RNA-seq data"
+date: "`r BiocStyle::doc_date()`"
+package: "`r BiocStyle::pkg_ver('BiocStyle')`"
+vignette: >
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{speckle: statistical methods for analysing single cell 
+  RNA-seq data}
+  %\VignetteEngine{knitr::rmarkdown}
+output: >
+  BiocStyle::html_document
+html_document:
+  fig_caption: yes
+  fig_retina: FALSE
+  keep_md: FALSE
+editor_options: 
+  chunk_output_type: console
+---
+
+# Introduction
+
+The `r BiocStyle::Biocpkg("speckle")` package contains functions to analyse 
+differences in cell type proportions in single cell RNA-seq data. As our 
+research into specialised analyses of single cell data continues we anticipate 
+that the package will be updated with new functions.
+
+The analysis of single cell RNA-seq data consists of a large number of steps, 
+which can be iterative and also depend on the research question. There are many 
+R packages that can do some or most of these steps. The analysis steps are 
+described here briefly. 
+
+Once the sequencing data has been summarised into counts over genes, quality 
+control is performed to remove poor quality cells. Poor quality cells are often 
+characterised as having very low total counts (library size) and very few genes 
+detected. Lowly expressed and uninformative genes are filtered out, followed by 
+appropriate normalisation. Dimensionality reduction and clustering of the cells
+is then performed. Cells that have similar transcriptional profiles cluster 
+together, and these clusters (hopefully) correspond to something biologically 
+relevant, such as different cell types. Differential expression between each 
+cluster compared to all other clusters can highlight genes that are more highly
+expressed in each cluster. These marker genes help to determine the cell type 
+each cluster corresponds to. Cell type identification is a process that often 
+uses marker genes as well as a list of curated genes that are known to be 
+expressed in each cell type. It is always helpful to visualise the data in a lot
+of different ways to aid in interpretation of the clusters using tSNE/UMAP 
+plots, clustering trees and heatmaps of known marker genes.
+
+# Installation
+
+```{r}
+#library(devtools)
+#install_github("/Oshlack/speckle")
+```
+
+# Finding significant differences in cell type proportions using propeller
+
+In order to determine whether there are statistically significant compositional 
+differences between groups, there must be some form of biological replication in
+the experiment. This is so that we can estimate the variability of the cell type
+proportion estimates for each group. A classical statistical test for 
+differences between two proportions is typically very sensitive to small changes
+and will almost always yield a significant p-value. Hence `propeller` is only 
+suitable to use in single cell experiments where there are multiple groups and 
+multiple biological replicates in at least one of the groups. The absolute 
+minimum sample size is 2 in one group and 1 in the other group/s. Variance 
+estimates are obtained from the group with more than 1 biological replicate 
+which assumes that the cell type proportion variances estimates are similar 
+between experimental conditions.
+
+The `propeller` test is performed after initial analysis of the single cell data
+has been done, i.e. after clustering and cell type assignment. The `propeller` 
+function can take a `SingleCellExperiment` or `Seurat` object and extract the 
+necessary information from the metadata. The basic model for `propeller` is that
+the cell type proportions for each sample are estimated based on the clustering 
+information provided by the user or extracted from the relevant slots in the 
+data objects. The proportions are then arc-sin square root transformed and for 
+each cell type $i$, we fit a linear model with group as the explanatory variable
+using functions from the R Bioconductor package `r BiocStyle::Biocpkg("limma")`.
+Using `r BiocStyle::Biocpkg("limma")` to obtain p-values has the added benefit 
+of performing empirical Bayes shrinkage of the variances. For every cell type 
+we obtain a p-value that indicates whether that cell type proportion is 
+statistically significantly different between two (or more) groups.
+
+# Load the libraries
+
+```{r}
+library(speckle)
+#source("/Users/phipsonbelinda/Documents/Rpackages/speckle/R/propeller.R")
+library(SingleCellExperiment)
+library(CellBench)
+library(limma)
+library(ggplot2)
+```
+
+
+# Loading data into R
+
+We are using single cell data from the `r BiocStyle::Biocpkg("CellBench")` 
+package to illustrate how `propeller` works. This is an artificial dataset that 
+is made up of an equal mixture of 3 different cell lines. There are three 
+datasets corresponding to three different technologies: 10x genomics, CelSeq and
+DropSeq.
+
+```{r}
+sc_data <- load_sc_data()
+```
+
+The way that `propeller` is designed to be used is in the context of a designed 
+experiment where there are multiple biological replicates and multiple groups. 
+Comparing cell type proportions without biological replication should be done 
+with caution as there will be a large degree of variability in the cell type 
+proportions between samples due to technical factors (cell capture bias, 
+sampling, clustering errors), as well as biological variability. The 
+`r BiocStyle::Biocpkg("CellBench")` dataset does not have biological 
+replication, so we will create several artificial biological replicates by 
+bootstrapping the data. Bootstrapping has the advantage that it induces 
+variability between bootstrap samples by sampling with replacement. Here we will
+treat the three technologies as the groups, and create artifical biological 
+replicates within each group. Note that bootstrapping only induces sampling 
+variability between our biological replicates, which will almost certainly be 
+much smaller than biological variability we would expect to see in a real 
+dataset.
+
+The three single cell experiment objects in `sc_data` all have differing numbers
+of genes. The first step is to find all the common genes between all three 
+experiments in order to create one large dataset.
+
+```{r}
+commongenes1 <- rownames(sc_data$sc_dropseq)[rownames(sc_data$sc_dropseq) %in% 
+                                               rownames(sc_data$sc_celseq)]
+commongenes2 <-  commongenes1[commongenes1 %in% rownames(sc_data$sc_10x)]
+
+sce_10x <- sc_data$sc_10x[commongenes2,]
+sce_celseq <- sc_data$sc_celseq[commongenes2,] 
+sce_dropseq <- sc_data$sc_dropseq[commongenes2,] 
+
+dim(sce_10x)
+dim(sce_celseq)
+dim(sce_dropseq)
+
+table(rownames(sce_10x) == rownames(sce_celseq))
+table(rownames(sce_10x) == rownames(sce_dropseq))
+```
+
+# Bootstrap additional samples
+
+This dataset does not have any biological replicates, so we will bootstrap 
+additional samples and pretend that they are biological replicates. 
+Bootstrapping won't replicate true biological variation between samples, but we 
+will ignore that for the purpose of demonstrating how `propeller` works. Note 
+that we don't need to simulation gene expression measurements; `propeller` only 
+uses cluster information, hence we simply bootstrap the column indices of the 
+single cell count matrices.
+
+```{r}
+i.10x <- seq_len(ncol(sce_10x))
+i.celseq <- seq_len(ncol(sce_celseq))
+i.dropseq <- seq_len(ncol(sce_dropseq))
+
+set.seed(10)
+boot.10x <- sample(i.10x, replace=TRUE)
+boot.celseq <- sample(i.celseq, replace=TRUE)
+boot.dropseq <- sample(i.dropseq, replace=TRUE)
+
+sce_10x_rep2 <- sce_10x[,boot.10x]
+sce_celseq_rep2 <- sce_celseq[,boot.celseq]
+sce_dropseq_rep2 <- sce_dropseq[,boot.dropseq]
+```
+
+# Combine all SingleCellExperiment objects
+
+The `SingleCellExperiment` objects don't combine very easily, so I will create a
+new object manually, and retain only the information needed to run `propeller`.
+
+```{r}
+sample <- rep(c("S1","S2","S3","S4","S5","S6"), 
+              c(ncol(sce_10x),ncol(sce_10x_rep2),ncol(sce_celseq),
+                ncol(sce_celseq_rep2), 
+                ncol(sce_dropseq),ncol(sce_dropseq_rep2)))
+cluster <- c(sce_10x$cell_line,sce_10x_rep2$cell_line,sce_celseq$cell_line,
+             sce_celseq_rep2$cell_line,sce_dropseq$cell_line,
+             sce_dropseq_rep2$cell_line)
+group <- rep(c("10x","celseq","dropseq"),
+             c(2*ncol(sce_10x),2*ncol(sce_celseq),2*ncol(sce_dropseq)))
+
+allcounts <- cbind(counts(sce_10x),counts(sce_10x_rep2), 
+                   counts(sce_celseq), counts(sce_celseq_rep2),
+                   counts(sce_dropseq), counts(sce_dropseq_rep2))
+
+sce_all <- SingleCellExperiment(assays = list(counts = allcounts))
+sce_all$sample <- sample
+sce_all$group <- group
+sce_all$cluster <- cluster
+```
+
+# Test for differences in cell line proportions in the three technologies
+
+In order to demonstrate `propeller` I will assume that the cell line information
+corresponds to clusters and all the analysis steps have beeen performed. Here we
+are interested in testing whether there are compositional differences between 
+the three technologies: 10x, CelSeq and DropSeq. Since there are more than 2 
+groups, `propeller` will perform an ANOVA to determine whether there is a 
+significant shift in the cell type proportions between these three groups.
+
+The `propeller` function can take a `SingleCellExperiment` object or `Seurat` 
+object as input and extract the three necessary pieces of information from the 
+cell information stored in `colData`. The three essential pieces of information 
+are
+
+* cluster
+* sample
+* group
+
+If these arguments are not explicitly passed to the `propeller` function, then 
+these are extracted from the metadata. Upper or lower case is acceptable, but 
+the variables need to be named exactly as stated in the list above. For a 
+`Seurat` object, the cluster information is extracted from `Idents(x)`.
+
+```{r}
+propeller(sce_all)
+```
+
+The other option is for the user to supply the cluster, sample and group 
+information explicitly to the `propeller` function.
+
+```{r}
+propeller(clusters=sce_all$cluster, sample=sce_all$sample, group=sce_all$group)
+```
+
+The cell lines were mixed together in equal proportions (~0.33) and hence we 
+don't expect to see significant differences between the three clusters. However,
+because bootstrapping the samples doesn't really incorporate enough variability 
+between the samples to mimic true biological variability, we can see that the 
+H1975 cluster looks significantly different between the three technologies. The 
+proportion of this cell line is closer to 0.4 for CelSeq and DropSeq, and 0.34 
+for the 10x data.
+
+# Visualise the results
+
+In the `r BiocStyle::Biocpkg("speckle")` package there is a plotting function 
+`plotCellTypeProps` that takes a `Seurat` or `SingleCellExperiment` object, 
+extracts sample and cluster information and outputs a barplot of cell type 
+proportions between the samples. The user also has the option of supplying the
+cluster and sample cell information instead of an R object. The output is a 
+`ggplot2` object that the user can then manipulate however they please.
+
+```{r,fig.height=4,fig.width=7}
+plotCellTypeProps(sce_all)
+```
+
+Alternatively, we can obtain the cell type proportions and transformed 
+proportions directly by running the `getTransformedProps` function which takes 
+the cluster and sample information as input.
+
+```{r,fig.height=4,fig.width=7}
+props <- getTransformedProps(sce_all$cluster, sce_all$sample)
+barplot(props$Proportions, col = c("orange","purple","dark green"),legend=TRUE, ylab="Proportions")
+```
+
+Call me old-school, but I still like looking at stripcharts to visualise results
+and see whether the significant p-values make sense.
+
+```{r,fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+for(i in 1:3){
+stripchart(props$Proportions[i,]~rep(c("10x","celseq","dropseq"),each=2),
+           vertical=TRUE, pch=16, method="jitter",
+           col = c("orange","purple","dark green"),cex=2, ylab="Proportions")
+title(rownames(props$Proportions)[i])
+}
+```
+
+# Fitting linear models using the transformed proportions directly
+
+If you are like me, you won't feel very comfortable with a black-box approach 
+where one function simply spits out a table of results. If you would like to 
+have more control over your linear model and include extra covariates then you 
+can fit a linear model in a more direct way using the transformed proportions 
+that is obtained by running the `getTransformedProps` function.
+
+We have already obtained the proportions and transformed proportions when we ran
+the `getTransformedProps` function. This function outputs a list object with two
+elements: `TransformedProps` and `Proportions`. These are both matrices with 
+clusters/cell types in the rows and samples in the columns.
+
+```{r}
+names(props)
+
+props$TransformedProps
+```
+
+First we need to set up our sample information in much the same way we would if 
+we were analysing bulk RNA-seq data. We can pretend that we have pairing 
+information which corresponds to our original vs bootstrapped samples. 
+
+```{r}
+group <- rep(c("10x","celseq","dropseq"),each=2)
+pair <- rep(c(1,2),3)
+data.frame(group,pair)
+```
+
+We can set up a design matrix taking into account group and pairing information.
+Please note that the way that `propeller` has been designed is such that the 
+group information is *always* first in the design matrix specification, and 
+there is NO intercept. If you are new to design matrices and linear modelling, I
+would highly recommend reading the `limma` manual, which is incredibly extensive
+and covers a variety of different experimental set ups.
+
+```{r}
+design <- model.matrix(~ 0+ group + pair)
+design
+```
+
+In our example, we have three groups, 10x, CelSeq and DropSeq. In order to 
+perform an ANOVA to test for cell type composition differences between these
+3 technologies, we can use the `propeller.anova` function. The `coef` argument
+tells the function which columns of the design matrix correspond to the groups 
+we are interested in testing. Here we are interested in the first three columns.
+
+```{r}
+propeller.anova(prop.list=props, design=design, coef = c(1,2,3), 
+                robust=TRUE, trend=FALSE)
+```
+
+Note that the p-values are smaller here than before because we have specified
+a pairing vector that states which samples were bootstrapped and which are the 
+original samples.
+
+If we were interested in testing only 10x versus DropSeq we could alternatively
+use the `propeller.ttest function` and specify a contrast that tests for this
+comparison with our design matrix.
+
+```{r}
+design
+mycontr <- makeContrasts(group10x-groupdropseq,levels=design)
+propeller.ttest(props, design, contrasts = mycontr, robust=TRUE, trend=FALSE)
+```
+
+# Session Info
+
+```{r}
+sessionInfo()
+```
+
+
+
+

@@ -6,10 +6,11 @@ Date: 2019-09-11
 Author: Belinda Phipson 
 Maintainer: Belinda Phipson <Belinda.Phipson@petermac.org>
 Depends: R (>= 3.6.0)
-Imports: limma, SingleCellExperiment, Seurat, statmod
+Imports: limma, SingleCellExperiment, Seurat, statmod, ggplot2
 VignetteBuilder: knitr
 Suggests: BiocStyle, knitr, rmarkdown, CellBench
 Description: speckle contains functions for performing compositional 
              analysis of single cell RNA-seq data.
 License: GPL-2
 biocViews: SingleCell, RNASeq, Regression, GeneExpression
+RoxygenNote: 7.1.0
