@@ -86,11 +86,12 @@ statistically significantly different between two (or more) groups.
 
 ```{r}
 library(speckle)
-#source("/Users/phipsonbelinda/Documents/Rpackages/speckle/R/propeller.R")
 library(SingleCellExperiment)
 library(CellBench)
 library(limma)
 library(ggplot2)
+library(scater)
+library(patchwork)
 ```
 
 
@@ -194,6 +195,48 @@ sce_all$group <- group
 sce_all$cluster <- cluster
 ```
 
+# Visualise the data
+
+Here I am going to use the Bioconductor package `r BiocStyle::Biocpkg("scater")`
+to visualise the data. The scater vignette goes quite deeply into quality 
+control of the cells and the kinds of QC plots we like to look at. Here we will 
+simply log-normalise the gene expression counts, perform dimensionality 
+reduction (PCA) and generate PCA/TSNE/UMAP plots to visualise the relationships 
+between the cells.
+
+```{r}
+sce_all <- scater::logNormCounts(sce_all)
+sce_all <- scater::runPCA(sce_all)
+sce_all <- scater::runUMAP(sce_all)
+```
+
+Plot PC1 vs PC2 colouring by cell line and technology:
+
+```{r, fig.width=10, fig.height=6}
+pca1 <- scater::plotReducedDim(sce_all, dimred = "PCA", colour_by = "cluster") +
+  ggtitle("Cell line")
+pca2 <- scater::plotReducedDim(sce_all, dimred = "PCA", colour_by = "group") +
+  ggtitle("Technology")
+pca1 + pca2
+```
+
+Plot UMAP highlighting cell line and technology:
+
+```{r, fig.width=10, fig.height=6}
+umap1 <- scater::plotReducedDim(sce_all, dimred = "UMAP", 
+                                colour_by = "cluster") + 
+  ggtitle("Cell line")
+umap2 <- scater::plotReducedDim(sce_all, dimred = "UMAP", colour_by = "group") +
+  ggtitle("Technology")
+umap1 + umap2
+```
+
+For this dataset UMAP is a little bit of an overkill, the PCA plots show the 
+relationships between the cells quite well. PCA1 separates cells based on 
+technology, and PCA2 separates cells based on the cell line (clusters). From the 
+PCA plots we can see that 10x is quite different to CelSeq and DropSeq, and the 
+H2228 cell line is quite different to the remaining 2 cell lines.
+
 # Test for differences in cell line proportions in the three technologies
 
 In order to demonstrate `propeller` I will assume that the cell line information
@@ -230,7 +273,7 @@ propeller(clusters=sce_all$cluster, sample=sce_all$sample, group=sce_all$group)
 
 The cell lines were mixed together in equal proportions (~0.33) and hence we 
 don't expect to see significant differences between the three clusters. However,
-because bootstrapping the samples doesn't really incorporate enough variability 
+because bootstrapping the samples doesn't incorporate enough variability 
 between the samples to mimic true biological variability, we can see that the 
 H1975 cluster looks significantly different between the three technologies. The 
 proportion of this cell line is closer to 0.4 for CelSeq and DropSeq, and 0.34 
@@ -253,9 +296,10 @@ Alternatively, we can obtain the cell type proportions and transformed
 proportions directly by running the `getTransformedProps` function which takes 
 the cluster and sample information as input.
 
-```{r,fig.height=4,fig.width=7}
+```{r,fig.height=5,fig.width=7}
 props <- getTransformedProps(sce_all$cluster, sce_all$sample)
-barplot(props$Proportions, col = c("orange","purple","dark green"),legend=TRUE, ylab="Proportions")
+barplot(props$Proportions, col = c("orange","purple","dark green"),legend=TRUE, 
+        ylab="Proportions")
 ```
 
 Call me old-school, but I still like looking at stripcharts to visualise results
@@ -277,12 +321,12 @@ If you are like me, you won't feel very comfortable with a black-box approach
 where one function simply spits out a table of results. If you would like to 
 have more control over your linear model and include extra covariates then you 
 can fit a linear model in a more direct way using the transformed proportions 
-that is obtained by running the `getTransformedProps` function.
+that can be obtained by running the `getTransformedProps` function.
 
 We have already obtained the proportions and transformed proportions when we ran
-the `getTransformedProps` function. This function outputs a list object with two
-elements: `TransformedProps` and `Proportions`. These are both matrices with 
-clusters/cell types in the rows and samples in the columns.
+the `getTransformedProps` function above. This function outputs a list object 
+with two elements: `TransformedProps` and `Proportions`. These are both matrices 
+with clusters/cell types in the rows and samples in the columns.
 
 ```{r}
 names(props)
@@ -292,7 +336,8 @@ props$TransformedProps
 
 First we need to set up our sample information in much the same way we would if 
 we were analysing bulk RNA-seq data. We can pretend that we have pairing 
-information which corresponds to our original vs bootstrapped samples. 
+information which corresponds to our original vs bootstrapped samples to make 
+our model a little more complicated for demonstration purposes. 
 
 ```{r}
 group <- rep(c("10x","celseq","dropseq"),each=2)
@@ -308,7 +353,7 @@ would highly recommend reading the `limma` manual, which is incredibly extensive
 and covers a variety of different experimental set ups.
 
 ```{r}
-design <- model.matrix(~ 0+ group + pair)
+design <- model.matrix(~ 0 + group + pair)
 design
 ```
 
@@ -328,14 +373,46 @@ a pairing vector that states which samples were bootstrapped and which are the
 original samples.
 
 If we were interested in testing only 10x versus DropSeq we could alternatively
-use the `propeller.ttest function` and specify a contrast that tests for this
+use the `propeller.ttest` function and specify a contrast that tests for this
 comparison with our design matrix.
 
 ```{r}
 design
-mycontr <- makeContrasts(group10x-groupdropseq,levels=design)
+mycontr <- makeContrasts(group10x-groupdropseq, levels=design)
 propeller.ttest(props, design, contrasts = mycontr, robust=TRUE, trend=FALSE)
 ```
+
+Finally note that the `robust` and `trend` parameters are parameters for the 
+`eBayes` function in `limma`. When `robust = TRUE`, robust empirical Bayes 
+shrinkage of the variances is performed which mitigates the effects of outlying
+observations. We set `trend = FALSE` as we don't expect a mean-variance trend 
+after performing our variance stabilising transformation. There may also be an
+error when `trend` is set to TRUE because there is often not enough data points
+to estimate the trend.
+
+# Tips for clustering
+
+The experimental groups are likely to contribute large sources of variation in 
+the data. In the `CellBench` data the technology effect is larger than the cell
+line effect. In order to cluster the data to produce meaningful cell types that
+will then feed into meaningful tests for proportions, the cell types should be 
+represented in as many samples as possible. Users should consider performing 
+integration techniques on their single cell data, integrating on biological 
+sample or perhaps experimental group. See methods such as Harmony, Liger and 
+Seurat's integration technique for more information.
+
+Cell type label assignment should not be too refined such that every sample has
+unique cell types. Consider testing more broad cell type categories for more 
+meaningful results, perhaps by combining clusters that are highly similar. These
+refined clusters can always be explored in terms of gene expression differences 
+later on. 
+It may be appropriate to perform cell type assignment using methods other than
+clustering, for example classification methods garnet and scPred. This allows 
+the user to classify cells into known cell types, but you run the risk of 
+missing novel cell types.
+A combination of approaches may be necessary depending on the dataset.
+
+
 
 # Session Info
 
