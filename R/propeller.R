@@ -171,6 +171,8 @@ propeller <- function(x=NULL, clusters=NULL, sample=NULL, group=NULL,
 #'
 #' @return a dataframe containing clusters, sample and group
 #'
+#' @importFrom methods is
+#'
 #' @author Belinda Phipson
 #'
 .extractSCE <- function(x){
