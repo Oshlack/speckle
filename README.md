@@ -53,6 +53,9 @@ type proportions in a two group experimental set up.
 
 ``` r
 library(speckle)
+library(limma)
+library(ggplot2)
+
 # Get some example data which has two groups, three cell types and two 
 # biological replicates in each group
 cell_info <- speckle_example_data()
