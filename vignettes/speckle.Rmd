@@ -48,9 +48,9 @@ plots, clustering trees and heatmaps of known marker genes.
 
 # Installation
 
-```{r}
-#library(devtools)
-#install_github("/Oshlack/speckle")
+```{r eval=FALSE}
+library(devtools)
+install_github("/Oshlack/speckle")
 ```
 
 # Finding significant differences in cell type proportions using propeller
@@ -349,8 +349,8 @@ We can set up a design matrix taking into account group and pairing information.
 Please note that the way that `propeller` has been designed is such that the 
 group information is *always* first in the design matrix specification, and 
 there is NO intercept. If you are new to design matrices and linear modelling, I
-would highly recommend reading the `limma` manual, which is incredibly extensive
-and covers a variety of different experimental set ups.
+would highly recommend reading the `r BiocStyle::Biocpkg("limma")` manual, which
+is incredibly extensive and covers a variety of different experimental set ups.
 
 ```{r}
 design <- model.matrix(~ 0 + group + pair)
@@ -383,34 +383,39 @@ propeller.ttest(props, design, contrasts = mycontr, robust=TRUE, trend=FALSE)
 ```
 
 Finally note that the `robust` and `trend` parameters are parameters for the 
-`eBayes` function in `limma`. When `robust = TRUE`, robust empirical Bayes 
-shrinkage of the variances is performed which mitigates the effects of outlying
-observations. We set `trend = FALSE` as we don't expect a mean-variance trend 
-after performing our variance stabilising transformation. There may also be an
-error when `trend` is set to TRUE because there is often not enough data points
-to estimate the trend.
+`eBayes` function in `r BiocStyle::Biocpkg("limma")`. When `robust = TRUE`, 
+robust empirical Bayes shrinkage of the variances is performed which mitigates 
+the effects of outlying observations. We set `trend = FALSE` as we don't expect 
+a mean-variance trend after performing our variance stabilising transformation. 
+There may also be an error when `trend` is set to TRUE because there is often 
+not enough data points to estimate the trend.
 
 # Tips for clustering
 
 The experimental groups are likely to contribute large sources of variation in 
-the data. In the `CellBench` data the technology effect is larger than the cell
-line effect. In order to cluster the data to produce meaningful cell types that
-will then feed into meaningful tests for proportions, the cell types should be 
-represented in as many samples as possible. Users should consider performing 
-integration techniques on their single cell data, integrating on biological 
-sample or perhaps experimental group. See methods such as Harmony, Liger and 
-Seurat's integration technique for more information.
+the data. In the `r BiocStyle::Biocpkg("CellBench")` data the technology effect 
+is larger than the cell line effect. In order to cluster the data to produce 
+meaningful cell types that will then feed into meaningful tests for proportions, 
+the cell types should be represented in as many samples as possible. Users 
+should consider using integration techniques on their single cell data 
+prior to clustering, integrating on biological sample or perhaps experimental 
+group. See methods such as Harmony, Liger and Seurat's integration technique 
+for more information.
 
 Cell type label assignment should not be too refined such that every sample has
-unique cell types. Consider testing more broad cell type categories for more 
-meaningful results, perhaps by combining clusters that are highly similar. These
-refined clusters can always be explored in terms of gene expression differences 
-later on. 
-It may be appropriate to perform cell type assignment using methods other than
-clustering, for example classification methods garnet and scPred. This allows 
-the user to classify cells into known cell types, but you run the risk of 
+many unique cell types. The `propeller` function can handle proportions of 0 and
+1 without breaking, but it is not very meaningful if every cell type difference
+is statistically significant. Consider testing cell type categories that are 
+broader for more meaningful results, perhaps by combining clusters that are 
+highly similar. The refined clusters can always be explored in terms of gene 
+expression differences later on. 
+
+It may be appropriate to perform cell type assignment using classification 
+methods rather than clustering, for example Garnett and scPred. This allows 
+the user to classify cells into known cell types, but you may run the risk of 
 missing novel cell types.
-A combination of approaches may be necessary depending on the dataset.
+A combination of approaches may be necessary depending on the dataset. 
+Good luck. The more heterogenous the dataset, the more tricky this becomes.
 
 
 
