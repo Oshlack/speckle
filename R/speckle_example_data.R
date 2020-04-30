@@ -3,6 +3,7 @@
 #' @return a dataframe containing cell-level information for sample, group and
 #' clusters
 #'
+#' @export
 #'
 #' @examples
 #'
