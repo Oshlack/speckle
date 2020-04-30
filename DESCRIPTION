@@ -8,7 +8,14 @@ Maintainer: Belinda Phipson <Belinda.Phipson@petermac.org>
 Depends: R (>= 3.6.0)
 Imports: limma, SingleCellExperiment, Seurat, statmod, ggplot2, methods
 VignetteBuilder: knitr
-Suggests: BiocStyle, knitr, rmarkdown, CellBench, scater, patchwork
+Suggests: 
+    BiocStyle,
+    knitr,
+    rmarkdown,
+    CellBench,
+    scater,
+    patchwork,
+    testthat
 Description: speckle contains functions for performing compositional 
              analysis of single cell RNA-seq data.
 License: GPL-2
