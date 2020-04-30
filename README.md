@@ -38,7 +38,7 @@ In order to view the vignette for speckle use the following command:
 browseVignettes("speckle")
 ```
 
-If you don't care to access the vignette you can also install speckle as 
+If you don't care to view the glorious vignette you can also install speckle as 
 follows:
 
 ``` r
