@@ -29,6 +29,7 @@
 #' TRUE.
 #' @param trend logical, should a trend between means and variances be accounted
 #' for. Defaults to FALSE.
+#' @param sort logical, should the output be sorted by P-value.
 #'
 #' @return produces a dataframe of results
 #'
@@ -91,36 +92,39 @@
 #'   design
 #'
 #'   propeller.anova(prop.list, design=design, coef=c(1,2,3), robust=TRUE,
-#'   trend=FALSE)
+#'   trend=FALSE, sort=TRUE)
 #'
 propeller.anova <- function(prop.list=prop.list, design=design, coef = coef,
-                            robust=robust, trend=trend)
+                            robust=robust, trend=trend, sort=sort)
 {
-  prop.trans <- prop.list$TransformedProps
-  prop <- prop.list$Proportions
+    prop.trans <- prop.list$TransformedProps
+    prop <- prop.list$Proportions
 
-  # get cell type mean proportions ignoring other variables
-  # this assumes that the design matrix is not in Intercept format
-  fit.prop <- lmFit(prop, design[,coef])
+    # get cell type mean proportions ignoring other variables
+    # this assumes that the design matrix is not in Intercept format
+    fit.prop <- lmFit(prop, design[,coef])
 
-  # Change design matrix to intercept format
-  design[,1] <- 1
-  colnames(design)[1] <- "Int"
+    # Change design matrix to intercept format
+    design[,1] <- 1
+    colnames(design)[1] <- "Int"
 
-  # Fit linear model taking into account all confounding variables
-  fit <- lmFit(prop.trans,design)
+    # Fit linear model taking into account all confounding variables
+    fit <- lmFit(prop.trans,design)
 
-  # Get F statistics corresponding to group information only
-  # You have to remove the intercept term for this to work
-  fit <- eBayes(fit[,coef[-1]], robust=robust, trend=trend)
+    # Get F statistics corresponding to group information only
+    # You have to remove the intercept term for this to work
+    fit <- eBayes(fit[,coef[-1]], robust=robust, trend=trend)
 
-  # Extract F p-value
-  p.value <- fit$F.p.value
-  # and perform FDR adjustment
-  fdr <- p.adjust(fit$F.p.value, method="BH")
+    # Extract F p-value
+    p.value <- fit$F.p.value
+    # and perform FDR adjustment
+    fdr <- p.adjust(fit$F.p.value, method="BH")
 
-  out <- data.frame(PropMean=fit.prop$coefficients, Fstatistic= fit$F,
+    out <- data.frame(PropMean=fit.prop$coefficients, Fstatistic= fit$F,
                     P.Value=p.value, FDR=fdr)
-  o <- order(out$P.Value)
-  out[o,]
+    if(sort){
+        o <- order(out$P.Value)
+        out[o,]
+    }
+    else out
 }

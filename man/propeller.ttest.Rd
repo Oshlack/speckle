@@ -9,7 +9,8 @@ propeller.ttest(
   design = design,
   contrasts = contrasts,
   robust = robust,
-  trend = trend
+  trend = trend,
+  sort = sort
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ TRUE.}
 
 \item{trend}{logical, should a trend between means and variances be accounted
 for. Defaults to FALSE.}
+
+\item{sort}{logical, should the output be sorted by P-value.}
 }
 \value{
 produces a dataframe of results
@@ -96,7 +99,7 @@ advantage that empirical Bayes shrinkage of the variances are performed.
   contrasts <- c(1,-1)
 
   propeller.ttest(prop.list, design=design, contrasts=contrasts, robust=TRUE,
-  trend=FALSE)
+  trend=FALSE, sort=TRUE)
 
 }
 \seealso{

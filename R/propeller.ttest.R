@@ -26,6 +26,7 @@
 #' TRUE.
 #' @param trend logical, should a trend between means and variances be accounted
 #' for. Defaults to FALSE.
+#' @param sort logical, should the output be sorted by P-value.
 #'
 #' @return produces a dataframe of results
 #'
@@ -83,28 +84,32 @@
 #'   contrasts <- c(1,-1)
 #'
 #'   propeller.ttest(prop.list, design=design, contrasts=contrasts, robust=TRUE,
-#'   trend=FALSE)
+#'   trend=FALSE, sort=TRUE)
 #'
 propeller.ttest <- function(prop.list=prop.list, design=design,
-                            contrasts=contrasts, robust=robust, trend=trend)
+                            contrasts=contrasts, robust=robust, trend=trend,
+                            sort=sort)
 {
-  prop.trans <- prop.list$TransformedProps
-  prop <- prop.list$Proportions
+    prop.trans <- prop.list$TransformedProps
+    prop <- prop.list$Proportions
 
-  fit <- lmFit(prop.trans, design)
-  fit.cont <- contrasts.fit(fit, contrasts=contrasts)
-  fit.cont <- eBayes(fit.cont, robust=robust, trend=trend)
+    fit <- lmFit(prop.trans, design)
+    fit.cont <- contrasts.fit(fit, contrasts=contrasts)
+    fit.cont <- eBayes(fit.cont, robust=robust, trend=trend)
 
-  # Get mean cell type proportions and relative risk for output
-  fit.prop <- lmFit(prop, design)
-  z <- apply(fit.prop$coefficients, 1, function(x) x^contrasts)
-  RR <- apply(z, 2, prod)
+    # Get mean cell type proportions and relative risk for output
+    fit.prop <- lmFit(prop, design)
+    z <- apply(fit.prop$coefficients, 1, function(x) x^contrasts)
+    RR <- apply(z, 2, prod)
 
-  fdr <- p.adjust(fit.cont$p.value, method="BH")
+    fdr <- p.adjust(fit.cont$p.value, method="BH")
 
-  out <- data.frame(PropMean=fit.prop$coefficients, PropRatio=RR,
+    out <- data.frame(PropMean=fit.prop$coefficients, PropRatio=RR,
                     Tstatistic=fit.cont$t[,1], P.Value=fit.cont$p.value[,1],
                     FDR=fdr)
-  o <- order(out$P.Value)
-  out[o,]
+    if(sort){
+        o <- order(out$P.Value)
+        out[o,]
+    }
+    else out
 }

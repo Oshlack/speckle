@@ -364,7 +364,7 @@ we are interested in testing. Here we are interested in the first three columns.
 
 ```{r}
 propeller.anova(prop.list=props, design=design, coef = c(1,2,3), 
-                robust=TRUE, trend=FALSE)
+                robust=TRUE, trend=FALSE, sort=TRUE)
 ```
 
 Note that the p-values are smaller here than before because we have specified
@@ -378,7 +378,8 @@ comparison with our design matrix.
 ```{r}
 design
 mycontr <- makeContrasts(group10x-groupdropseq, levels=design)
-propeller.ttest(props, design, contrasts = mycontr, robust=TRUE, trend=FALSE)
+propeller.ttest(props, design, contrasts = mycontr, robust=TRUE, trend=FALSE, 
+                sort=TRUE)
 ```
 
 Finally note that the `robust` and `trend` parameters are parameters for the 

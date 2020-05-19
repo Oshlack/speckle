@@ -9,7 +9,8 @@ propeller.anova(
   design = design,
   coef = coef,
   robust = robust,
-  trend = trend
+  trend = trend,
+  sort = sort
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ TRUE.}
 
 \item{trend}{logical, should a trend between means and variances be accounted
 for. Defaults to FALSE.}
+
+\item{sort}{logical, should the output be sorted by P-value.}
 }
 \value{
 produces a dataframe of results
@@ -104,7 +107,7 @@ variances are performed.
   design
 
   propeller.anova(prop.list, design=design, coef=c(1,2,3), robust=TRUE,
-  trend=FALSE)
+  trend=FALSE, sort=TRUE)
 
 }
 \seealso{
