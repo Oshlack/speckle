@@ -33,7 +33,8 @@
 #'
 #' @return produces a dataframe of results
 #'
-#' @export
+#' @importFrom stats p.adjust
+#' @export propeller.anova
 #'
 #' @author Belinda Phipson
 #'

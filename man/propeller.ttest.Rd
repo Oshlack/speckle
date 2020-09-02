@@ -101,6 +101,19 @@ advantage that empirical Bayes shrinkage of the variances are performed.
   propeller.ttest(prop.list, design=design, contrasts=contrasts, robust=TRUE,
   trend=FALSE, sort=TRUE)
 
+  # Pretend additional sex variable exists and we want to control for it
+  # in the linear model
+  sex <- rep(c(0,1),2)
+  des.sex <- model.matrix(~0+grp+sex)
+  des.sex
+
+  # Compare Grp A to B
+  cont.sex <- c(1,-1,0)
+
+  propeller.ttest(prop.list, design=des.sex, contrasts=cont.sex, robust=TRUE,
+  trend=FALSE, sort=TRUE)
+
+
 }
 \seealso{
 \code{\link{propeller}}, \code{\link{getTransformedProps}},
