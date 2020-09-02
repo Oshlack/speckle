@@ -4,12 +4,19 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of speckle is to perform statistical tests for differences in cell
+The speckle package currently contains functions to analyse differences in cell 
+type proportions in single cell RNA-seq data. As our research into specialised 
+analyses of single cell data continues we anticipate that the package will be 
+updated with new functions.
+
+The propeller function performs statistical tests for differences in cell
 type composition in single cell data. In order to test for differences in cell
 type proportions between multiple experimental conditions at least one of the 
 groups must have some form of biological replication (i.e. at least two 
 samples). For a two group scenario, the absolute minimum sample size is thus 
-three. 
+three. Since there are many technical aspects which can affect cell type 
+proportion estimates, having biological replication is essential for a 
+meaningful analysis.
 
 The propeller function takes a SingleCellExperiment or Seurat object as input,
 extracts the relevant cell information, and tests whether the cell type 
