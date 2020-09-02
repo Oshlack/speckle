@@ -438,12 +438,14 @@ topTable(fit.prop)
 You could plot the continuous variable `dose` against the proportions and add 
 trend lines, for example.
 
-```{r}
+```{r,fig.height=4,fig.width=10}
 fit.prop$coefficients
 
 par(mfrow=c(1,3))
 for(i in 1:3){
-  plot(dose, props$Proportions[i,], main = rownames(props$Proportions)[i])
+  plot(dose, props$Proportions[i,], main = rownames(props$Proportions)[i], 
+       pch=16, cex=2, ylab="Proportions", cex.lab=1.5, cex.axis=1.5,
+       cex.main=2)
   abline(a=fit.prop$coefficients[i,1], b=fit.prop$coefficients[i,2], col=4, 
          lwd=2)
 }
