@@ -86,6 +86,19 @@
 #'   propeller.ttest(prop.list, design=design, contrasts=contrasts, robust=TRUE,
 #'   trend=FALSE, sort=TRUE)
 #'
+#'   # Pretend additional sex variable exists and we want to control for it
+#'   # in the linear model
+#'   sex <- rep(c(0,1),2)
+#'   des.sex <- model.matrix(~0+grp+sex)
+#'   des.sex
+#'
+#'   # Compare Grp A to B
+#'   cont.sex <- c(1,-1,0)
+#'
+#'   propeller.ttest(prop.list, design=des.sex, contrasts=cont.sex, robust=TRUE,
+#'   trend=FALSE, sort=TRUE)
+#'
+#'
 propeller.ttest <- function(prop.list=prop.list, design=design,
                             contrasts=contrasts, robust=robust, trend=trend,
                             sort=sort)
@@ -98,9 +111,20 @@ propeller.ttest <- function(prop.list=prop.list, design=design,
     fit.cont <- eBayes(fit.cont, robust=robust, trend=trend)
 
     # Get mean cell type proportions and relative risk for output
-    fit.prop <- lmFit(prop, design)
-    z <- apply(fit.prop$coefficients, 1, function(x) x^contrasts)
-    RR <- apply(z, 2, prod)
+    # If no confounding variable included in design matrix
+    if(length(contrasts)==2){
+        fit.prop <- lmFit(prop, design)
+        z <- apply(fit.prop$coefficients, 1, function(x) x^contrasts)
+        RR <- apply(z, 2, prod)
+    }
+    # If confounding variables included in design matrix exclude them
+    else{
+        new.des <- design[,contrasts!=0]
+        fit.prop <- lmFit(prop,new.des)
+        new.cont <- contrasts[contrasts!=0]
+        z <- apply(fit.prop$coefficients, 1, function(x) x^new.cont)
+        RR <- apply(z, 2, prod)
+    }
 
     fdr <- p.adjust(fit.cont$p.value, method="BH")
 
