@@ -31,6 +31,9 @@
 #' @return produces a dataframe of results
 #'
 #' @importFrom stats p.adjust
+#' @importFrom limma lmFit
+#' @importFrom limma eBayes
+#' @importFrom limma contrasts.fit
 #' @export propeller.ttest
 #'
 #' @author Belinda Phipson

@@ -176,6 +176,7 @@ propeller <- function(x=NULL, clusters=NULL, sample=NULL, group=NULL,
 #' @return a dataframe containing clusters, sample and group
 #'
 #' @importFrom methods is
+#' @importFrom SingleCellExperiment colData
 #'
 #' @author Belinda Phipson
 #'
@@ -196,6 +197,8 @@ propeller <- function(x=NULL, clusters=NULL, sample=NULL, group=NULL,
 #' @param x object of class \code{Seurat}
 #'
 #' @return a dataframe containing clusters, sample and group
+#'
+#' @importFrom Seurat Idents
 #'
 #' @author Belinda Phipson
 #'

@@ -270,13 +270,13 @@ information explicitly to the `propeller` function.
 propeller(clusters=sce_all$cluster, sample=sce_all$sample, group=sce_all$group)
 ```
 
-The cell lines were mixed together in equal proportions (~0.33) and hence we 
-don't expect to see significant differences between the three clusters. However,
-because bootstrapping the samples doesn't incorporate enough variability 
-between the samples to mimic true biological variability, we can see that the 
-H1975 cluster looks significantly different between the three technologies. The 
-proportion of this cell line is closer to 0.4 for CelSeq and DropSeq, and 0.34 
-for the 10x data.
+The cell lines were mixed together in roughly equal proportions (~0.33) and 
+hence we don't expect to see significant differences between the three clusters. 
+However, because bootstrapping the samples doesn't incorporate enough 
+variability between the samples to mimic true biological variability, we can see 
+that the H1975 cluster looks significantly different between the three 
+technologies. The proportion of this cell line is closer to 0.4 for CelSeq and 
+DropSeq, and 0.34 for the 10x data.
 
 # Visualise the results
 
@@ -390,6 +390,127 @@ a mean-variance trend after performing our variance stabilising transformation.
 There may also be an error when `trend` is set to TRUE because there is often 
 not enough data points to estimate the trend.
 
+# More complex (or just different) experimental designs
+
+## Fitting a continuous variable rather than groups
+
+Let us assume that we expect that the different technologies have a meaningful 
+ordering to them, and we would like to find the cell types that are increasing 
+or decreasing along this trend. In more complex scenarios beyond group 
+comparisons I would recommend taking the transformed proportions from the 
+`getTransformedProps` function and using the linear model fitting functions from 
+the `r BiocStyle::Biocpkg("limma")` package directly.
+
+Let us assume that the ordering of the technologies is 10x -> celseq -> dropseq. 
+Then we can recode them 1, 2, 3 and treat the technologies as a
+continuous variable. Obviously this scenario doesn't make much sense 
+biologically, but we will continue for demonstration purposes.
+
+```{r}
+group
+dose <- rep(c(1,2,3), each=2) 
+
+des.dose <- model.matrix(~dose)
+des.dose
+
+fit <- lmFit(props$TransformedProps,des.dose)
+fit <- eBayes(fit, robust=TRUE)
+topTable(fit)
+```
+
+Here the log fold changes are reported on the transformed data, so they are 
+not as easy to interpret directly. The positive logFC indicates that the cell
+type proportions are increasing (for example for H1975), and a negative
+logFC indicates that the proportions are decreasing across the ordered 
+technologies 10x -> celseq -> dropseq.
+
+You can get the estimates from the model on the proportions directly by fitting
+the same model to the proportions. Here the `logFC` is the slope of the trend 
+line on the proportions, and the `AveExpr` is the average of the proportions 
+across all technologies.
+
+```{r}
+fit.prop <- lmFit(props$Proportions,des.dose)
+fit.prop <- eBayes(fit.prop, robust=TRUE)
+topTable(fit.prop)
+```
+
+You could plot the continuous variable `dose` against the proportions and add 
+trend lines, for example.
+
+```{r}
+fit.prop$coefficients
+
+par(mfrow=c(1,3))
+for(i in 1:3){
+  plot(dose, props$Proportions[i,], main = rownames(props$Proportions)[i])
+  abline(a=fit.prop$coefficients[i,1], b=fit.prop$coefficients[i,2], col=4, 
+         lwd=2)
+}
+```
+
+What I recommend in this instance is using the p-values from the analysis on the
+transformed data, and the reported statistics (i.e. the coefficients from the 
+model) obtained from the analysis on the proportions for visualisation purposes. 
+
+## Including random effects
+
+If you have a random effect that you would like to account for in your analysis, 
+for example repeated measures on the same individual, then you can use the
+`duplicateCorrelation` function from the `r BiocStyle::Biocpkg("limma")`.
+
+For illustration purposes, let us assume that `pair` indicates samples taken 
+from the same individual (or they could represent technical replicates), and we 
+would like to account for this in our analysis 
+using a random effect. Again, we fit our models on the transformed proportions
+in order to obtain the p-values.
+
+We will formulate the design matrix with an intercept for this example, and test
+the differences in technologies relative to 10x. The `block` parameter will be
+the `pair` variable. Note that the design matrix now does not include `pair` as 
+a fixed effect.
+
+```{r}
+des.tech <- model.matrix(~group)
+
+dupcor <- duplicateCorrelation(props$TransformedProps, design=des.tech,
+                               block=pair)
+dupcor
+```
+
+The consensus correlation is quite high (`r dupcor$consensus.correlation`), 
+which we expect because we bootstrapped these additional samples.
+
+```{r}
+# Fitting the linear model accounting for pair as a random effect
+fit1 <- lmFit(props$TransformedProps, design=des.tech, block=pair, 
+              correlation=dupcor$consensus)
+fit1 <- eBayes(fit1)
+summary(decideTests(fit1))
+
+# Differences between celseq vs 10x
+topTable(fit1,coef=2)
+
+# Differences between dropseq vs 10x
+topTable(fit1, coef=3)
+```
+
+For celseq vs 10x, H1975 and H2228 are significantly different, with a greater
+proportion of H1975
+cells detected in celseq, and fewer H2228 cells. For dropseq vs 10x, there is a 
+higher proportion of H1975 cells.
+
+If you want to do an ANOVA between the three groups:
+```{r}
+topTable(fit1, coef=2:3)
+```
+
+Generally, you can perform any analysis on the transformed proportions that you
+would normally do when using limma (i.e. on roughly normally distributed data). 
+For more complex random effects models with 2 or more random effects, you can 
+use the ``r BiocStyle::Biocpkg("lme4")` package.
+
+
 # Tips for clustering
 
 The experimental groups are likely to contribute large sources of variation in 
@@ -417,7 +538,12 @@ missing novel cell types.
 A combination of approaches may be necessary depending on the dataset. 
 Good luck. The more heterogenous the dataset, the more tricky this becomes.
 
+# See also
 
+Another approach is to model the counts directly using statistical models that 
+can take into account biological variability, such as negative binomial or 
+Poisson models. You can read the [OSCA book chapter](https://osca.bioconductor.org/multi-sample-comparisons.html#differential-abundance)
+on how to use the `r BiocStyle::Biocpkg("edgeR")` package to do this.
 
 # Session Info
 

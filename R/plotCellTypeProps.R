@@ -15,6 +15,12 @@
 #' objects this should correspond to \code{x$sample}.
 #'
 #' @return a ggplot2 object
+#'
+#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 element_text
+#' @importFrom ggplot2 geom_bar
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 theme
 #' @export
 #'
 #' @author Belinda Phipson

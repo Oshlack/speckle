@@ -34,6 +34,8 @@
 #' @return produces a dataframe of results
 #'
 #' @importFrom stats p.adjust
+#' @importFrom limma lmFit
+#' @importFrom limma eBayes
 #' @export propeller.anova
 #'
 #' @author Belinda Phipson
