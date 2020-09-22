@@ -2,7 +2,7 @@
 author: "Belinda Phipson"
 title: "speckle: statistical methods for analysing single cell RNA-seq data"
 date: "`r BiocStyle::doc_date()`"
-package: "`r BiocStyle::pkg_ver('BiocStyle')`"
+package: "`r BiocStyle::pkg_ver('speckle')`"
 vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{speckle: statistical methods for analysing single cell RNA-seq data}

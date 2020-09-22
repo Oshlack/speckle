@@ -13,4 +13,4 @@ Description: speckle contains functions for performing compositional
              analysis of single cell RNA-seq data.
 License: GPL-3
 biocViews: SingleCell, RNASeq, Regression, GeneExpression
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
