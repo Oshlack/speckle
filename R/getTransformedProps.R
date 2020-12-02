@@ -9,13 +9,20 @@
 #'
 #' @param clusters a factor specifying the cluster or cell type for every cell.
 #' @param sample a factor specifying the biological replicate for every cell.
+#' @param transform a character scalar specifying which transformation of the 
+#' proportions to perform. Possible values include "asin" or "logit". Defaults
+#' to "asin".
+#' 
 #' @return outputs a list object with the following components
+#' \item{Counts }{A matrix of cell type counts with
+#' the rows corresponding to the clusters/cell types and the columns
+#' corresponding to the biological replicates/samples.}
 #' \item{TransformedProps }{A matrix of transformed cell type proportions with
 #' the rows corresponding to the clusters/cell types and the columns
-#' corresponding to the biological replicates/samples.} \item{Proportions }{A
-#' matrix of cell type proportions with the rows corresponding to the
-#' clusters/cell types and the columns corresponding to the biological
-#' replicates/samples.}
+#' corresponding to the biological replicates/samples.} 
+#' \item{Proportions }{A  matrix of cell type proportions with the rows 
+#' corresponding to the clusters/cell types and the columns corresponding to 
+#' the biological replicates/samples.}
 #'
 #' @export
 #'
@@ -61,10 +68,21 @@
 #'
 #'   getTransformedProps(clusters = clust, sample = biorep)
 #'
-getTransformedProps <- function(clusters=clusters, sample=sample)
+getTransformedProps <- function(clusters=clusters, sample=sample, 
+                                transform=NULL)
 {
+  if(is.null(transform)) transform <- "asin"
+  
   tab <- table(sample, clusters)
   props <- tab/rowSums(tab)
-  prop.trans <- asin(sqrt(props))
-  list(TransformedProps=t(prop.trans), Proportions=t(props))
+  if(transform=="asin"){
+      message("Performing arcsin square root transformation of proportions")
+      prop.trans <- asin(sqrt(props))
+  }
+  else if(transform=="logit"){
+      message("Performing logit transformation of proportions")
+      props.pseudo <- (tab+0.5)/rowSums(tab+0.5)
+      prop.trans <- log(props.pseudo/(1-props.pseudo))
+  }
+  list(Counts=t(tab), TransformedProps=t(prop.trans), Proportions=t(props))
 }

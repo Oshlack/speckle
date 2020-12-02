@@ -17,6 +17,14 @@ editor_options:
   chunk_output_type: console
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+)
+```
+
 # Introduction
 
 The `r BiocStyle::Biocpkg("speckle")` package contains functions to analyse 
@@ -73,7 +81,8 @@ function can take a `SingleCellExperiment` or `Seurat` object and extract the
 necessary information from the metadata. The basic model for `propeller` is that
 the cell type proportions for each sample are estimated based on the clustering 
 information provided by the user or extracted from the relevant slots in the 
-data objects. The proportions are then arc-sin square root transformed and for 
+data objects. The proportions are then transformed using either an arcsin square
+root transformation, or logit transformation. For 
 each cell type $i$, we fit a linear model with group as the explanatory variable
 using functions from the R Bioconductor package `r BiocStyle::Biocpkg("limma")`.
 Using `r BiocStyle::Biocpkg("limma")` to obtain p-values has the added benefit 
@@ -91,6 +100,7 @@ library(limma)
 library(ggplot2)
 library(scater)
 library(patchwork)
+library(edgeR)
 ```
 
 
@@ -149,7 +159,7 @@ This dataset does not have any biological replicates, so we will bootstrap
 additional samples and pretend that they are biological replicates. 
 Bootstrapping won't replicate true biological variation between samples, but we 
 will ignore that for the purpose of demonstrating how `propeller` works. Note 
-that we don't need to simulation gene expression measurements; `propeller` only 
+that we don't need to simulate gene expression measurements; `propeller` only 
 uses cluster information, hence we simply bootstrap the column indices of the 
 single cell count matrices.
 
@@ -197,7 +207,8 @@ sce_all$cluster <- cluster
 # Visualise the data
 
 Here I am going to use the Bioconductor package `r BiocStyle::Biocpkg("scater")`
-to visualise the data. The scater vignette goes quite deeply into quality 
+to visualise the data. The `r BiocStyle::Biocpkg("scater")` vignette goes 
+quite deeply into quality 
 control of the cells and the kinds of QC plots we like to look at. Here we will 
 simply log-normalise the gene expression counts, perform dimensionality 
 reduction (PCA) and generate PCA/TSNE/UMAP plots to visualise the relationships 
@@ -211,7 +222,7 @@ sce_all <- scater::runUMAP(sce_all)
 
 Plot PC1 vs PC2 colouring by cell line and technology:
 
-```{r, fig.width=10, fig.height=6}
+```{r, fig.width=12, fig.height=6}
 pca1 <- scater::plotReducedDim(sce_all, dimred = "PCA", colour_by = "cluster") +
   ggtitle("Cell line")
 pca2 <- scater::plotReducedDim(sce_all, dimred = "PCA", colour_by = "group") +
@@ -221,7 +232,7 @@ pca1 + pca2
 
 Plot UMAP highlighting cell line and technology:
 
-```{r, fig.width=10, fig.height=6}
+```{r, fig.width=12, fig.height=6}
 umap1 <- scater::plotReducedDim(sce_all, dimred = "UMAP", 
                                 colour_by = "cluster") + 
   ggtitle("Cell line")
@@ -259,12 +270,28 @@ these are extracted from the metadata. Upper or lower case is acceptable, but
 the variables need to be named exactly as stated in the list above. For a 
 `Seurat` object, the cluster information is extracted from `Idents(x)`.
 
+The default of propeller is to perform the arcsin square root transformation:
 ```{r}
+# Perform arcsin square root transformation
 propeller(sce_all)
 ```
 
-The other option is for the user to supply the cluster, sample and group 
-information explicitly to the `propeller` function.
+An alternative variance stabilising transformation is the logit transformation. 
+The logit transformation doesn't compute on proportions of 0 and 1, so a 
+pseudocount of 0.5 is added to the counts matrix prior to calculating the 
+cell type proportions.
+
+```{r}
+# Perform logit transformation
+propeller(sce_all, transform="logit")
+```
+
+The results from using the two different transforms are a little bit different, 
+with the H1975 cell line being statistically significant using the arc sin 
+square root transform, and not significant after using the logit transform.
+
+Another option for running `propeller` is for the user to supply the cluster, 
+sample and group information explicitly to the `propeller` function.
 
 ```{r}
 propeller(clusters=sce_all$cluster, sample=sce_all$sample, group=sce_all$group)
@@ -293,10 +320,10 @@ plotCellTypeProps(sce_all)
 
 Alternatively, we can obtain the cell type proportions and transformed 
 proportions directly by running the `getTransformedProps` function which takes 
-the cluster and sample information as input.
+the cluster and sample information as input. The output from `getTransformedProps` is a list with the cell type counts, transformed proportions and proportions as elements.
 
 ```{r,fig.height=5,fig.width=7}
-props <- getTransformedProps(sce_all$cluster, sce_all$sample)
+props <- getTransformedProps(sce_all$cluster, sce_all$sample, transform="logit")
 barplot(props$Proportions, col = c("orange","purple","dark green"),legend=TRUE, 
         ylab="Proportions")
 ```
@@ -314,6 +341,18 @@ title(rownames(props$Proportions)[i])
 }
 ```
 
+If you are interested in seeing which model best fits the data in terms of the
+cell type variances, there are two plotting functions that can do this: 
+`plotCellTypeMeanVar` and `plotCellTypePropsMeanVar`. For this particular 
+dataset it isn't very informative because there are only three cell "types" 
+and no biogical variability.
+
+```{r}
+plotCellTypeMeanVar(props$Counts)
+plotCellTypePropsMeanVar(props$Counts)
+```
+
+
 # Fitting linear models using the transformed proportions directly
 
 If you are like me, you won't feel very comfortable with a black-box approach 
@@ -324,7 +363,7 @@ that can be obtained by running the `getTransformedProps` function.
 
 We have already obtained the proportions and transformed proportions when we ran
 the `getTransformedProps` function above. This function outputs a list object 
-with two elements: `TransformedProps` and `Proportions`. These are both matrices 
+with three elements: `Counts`, `TransformedProps` and `Proportions`. These are all matrices 
 with clusters/cell types in the rows and samples in the columns.
 
 ```{r}
@@ -534,7 +573,7 @@ highly similar. The refined clusters can always be explored in terms of gene
 expression differences later on. 
 
 It may be appropriate to perform cell type assignment using classification 
-methods rather than clustering, for example Garnett and scPred. This allows 
+methods rather than clustering. This allows 
 the user to classify cells into known cell types, but you may run the risk of 
 missing novel cell types.
 A combination of approaches may be necessary depending on the dataset. 
@@ -543,8 +582,9 @@ Good luck. The more heterogenous the dataset, the more tricky this becomes.
 # See also
 
 Another approach is to model the counts directly using statistical models that 
-can take into account biological variability, such as negative binomial or 
-Poisson models. You can read the [OSCA book chapter](https://osca.bioconductor.org/multi-sample-comparisons.html#differential-abundance)
+can take into account biological variability, such as negative binomial. 
+You can read the 
+[OSCA bookchapter](http://bioconductor.org/books/release/OSCA/multi-sample-comparisons.html)
 on how to use the `r BiocStyle::Biocpkg("edgeR")` package to do this.
 
 # Session Info

@@ -10,7 +10,8 @@ propeller(
   sample = NULL,
   group = NULL,
   trend = FALSE,
-  robust = TRUE
+  robust = TRUE,
+  transform = "asin"
 )
 }
 \arguments{
@@ -36,6 +37,10 @@ proportions}
 
 \item{robust}{logical, if true performs robust empirical Bayes shrinkage of
 the variances}
+
+\item{transform}{a character scalar specifying which transformation of the 
+proportions to perform. Possible values include "asin" or "logit". Defaults
+to "asin".}
 }
 \value{
 produces a dataframe of results
@@ -61,12 +66,14 @@ be a column in the \code{colData} assay.
 The \code{propeller} function calculates cell type proportions for each
 biological replicate, performs a variance stabilising transformation on the
 matrix of proportions and fits a linear model for each cell type or cluster
-using the \code{limma} framework. Propeller tests whether there is a
-difference in the cell type proportions between multiple groups. If there
-are only 2 groups, a t-test is used to calculate p-values, and if there are
-more than 2 groups, an F-test (ANOVA) is used. Cell type proportions of 1 or
-0 are accommodated. Benjamini and Hochberg false discovery rates are
-calculated to account to multiple testing of cell types/clusters.
+using the \code{limma} framework. There are two options for the 
+transformation: arcsin square root or logit. Propeller tests whether there 
+is a difference in the cell type proportions between multiple groups. 
+If there are only 2 groups, a t-test is used to calculate p-values, and if 
+there are more than 2 groups, an F-test (ANOVA) is used. Cell type 
+proportions of 1 or 0 are accommodated. Benjamini and Hochberg false 
+discovery rates are calculated to account to multiple testing of 
+cell types/clusters.
 }
 \examples{
 
@@ -108,7 +115,7 @@ calculated to account to multiple testing of cell types/clusters.
   grp <- rep(c("grp1","grp2"),c(sum(numcells[1:2]),sum(numcells[3:4])))
 
   propeller(clusters = clust, sample = biorep, group = grp,
-  robust = FALSE, trend = FALSE)
+  robust = FALSE, trend = FALSE, transform="asin")
 
 }
 \references{

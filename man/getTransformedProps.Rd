@@ -4,21 +4,28 @@
 \alias{getTransformedProps}
 \title{Calculates and transforms cell type proportions}
 \usage{
-getTransformedProps(clusters = clusters, sample = sample)
+getTransformedProps(clusters = clusters, sample = sample, transform = NULL)
 }
 \arguments{
 \item{clusters}{a factor specifying the cluster or cell type for every cell.}
 
 \item{sample}{a factor specifying the biological replicate for every cell.}
+
+\item{transform}{a character scalar specifying which transformation of the 
+proportions to perform. Possible values include "asin" or "logit". Defaults
+to "asin".}
 }
 \value{
 outputs a list object with the following components
+\item{Counts }{A matrix of cell type counts with
+the rows corresponding to the clusters/cell types and the columns
+corresponding to the biological replicates/samples.}
 \item{TransformedProps }{A matrix of transformed cell type proportions with
 the rows corresponding to the clusters/cell types and the columns
-corresponding to the biological replicates/samples.} \item{Proportions }{A
-matrix of cell type proportions with the rows corresponding to the
-clusters/cell types and the columns corresponding to the biological
-replicates/samples.}
+corresponding to the biological replicates/samples.} 
+\item{Proportions }{A  matrix of cell type proportions with the rows 
+corresponding to the clusters/cell types and the columns corresponding to 
+the biological replicates/samples.}
 }
 \description{
 Calculates cell types proportions based on clusters/cell types and sample

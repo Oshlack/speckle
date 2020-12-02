@@ -1,12 +1,12 @@
 Package: speckle
 Type: Package
 Title: Statistical methods for analysing single cell RNA-seq data
-Version: 0.0.1
-Date: 2019-09-11
+Version: 0.0.2
+Date: 2020-12-02
 Author: Belinda Phipson 
 Maintainer: Belinda Phipson <Belinda.Phipson@petermac.org>
 Depends: R (>= 3.6.0)
-Imports: limma, SingleCellExperiment, Seurat, statmod, ggplot2, methods
+Imports: limma, edgeR, SingleCellExperiment, Seurat, statmod, ggplot2, methods
 VignetteBuilder: knitr
 Suggests: BiocStyle, knitr, rmarkdown, CellBench, scater, patchwork
 Description: speckle contains functions for performing compositional 
