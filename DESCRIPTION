@@ -6,8 +6,7 @@ Date: 2020-12-02
 Author: Belinda Phipson 
 Maintainer: Belinda Phipson <Belinda.Phipson@petermac.org>
 Depends: R (>= 3.6.0)
-Imports: limma, edgeR, SingleCellExperiment, Seurat, statmod, ggplot2, methods,
-         caret, scuttle, stringr, AnnotationDbi, org.Hs.eg.db, org.Mm.eg.db
+Imports: limma, edgeR, SingleCellExperiment, Seurat, statmod, ggplot2, methods, caret, scuttle, stringr, AnnotationDbi, org.Hs.eg.db, org.Mm.eg.db
 VignetteBuilder: knitr
 Suggests: BiocStyle, knitr, rmarkdown, CellBench, scater, patchwork
 Description: speckle contains functions for the analysis of single cell RNA-seq data.
