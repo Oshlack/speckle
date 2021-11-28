@@ -5,7 +5,8 @@
 <!-- badges: end -->
 
 The speckle package currently contains functions to analyse differences in cell 
-type proportions in single cell RNA-seq data. As our research into specialised 
+type proportions in single cell RNA-seq data, and to classify cells as male or 
+female. As our research into specialised 
 analyses of single cell data continues we anticipate that the package will be 
 updated with new functions.
 
@@ -76,4 +77,11 @@ group = cell_info$group)
 # Plot cell type proportions
 plotCellTypeProps(clusters=cell_info$clusters, sample=cell_info$samples)
 ```
+Please note that this basic implementation is for when you are only modelling
+group information. When you have additional covariates that you would like to 
+account for, please use the propeller.ttest() and propeller.anova() functions
+directly. Please read the vignette for examples on how to model a continuous 
+variable, account for additional covariates and include a random effect in the 
+analysis. 
+
 

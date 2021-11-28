@@ -6,7 +6,6 @@
 \alias{speckle-package}
 \title{speckle: Statistical methods for analysing single cell RNA-seq data}
 \description{
-speckle contains functions for performing compositional 
-             analysis of single cell RNA-seq data.
+speckle contains functions for the analysis of single cell RNA-seq data.
 }
 \keyword{internal}

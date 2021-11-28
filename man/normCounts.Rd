@@ -4,7 +4,7 @@
 \alias{normCounts}
 \title{Normalise a counts matrix to the median library size}
 \usage{
-normCounts(x, log = FALSE, prior.count = 0.5)
+normCounts(x, log = FALSE, prior.count = 0.5, lib.size = NULL)
 }
 \arguments{
 \item{x}{a \code{DGEList} object or matrix of counts.}
@@ -14,6 +14,9 @@ or counts scale. Default is FALSE.}
 
 \item{prior.count}{The prior count to add if the data is log2 normalised.
 Default is a small count of 0.5.}
+
+\item{lib.size}{a vector of library sizes to be used during the normalisation
+step. Default is NULL and will be computed from the counts matrix.}
 }
 \value{
 a matrix of normalised counts

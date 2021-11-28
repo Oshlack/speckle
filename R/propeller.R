@@ -48,7 +48,7 @@
 #' the variances
 #' @param transform a character scalar specifying which transformation of the 
 #' proportions to perform. Possible values include "asin" or "logit". Defaults
-#' to "asin".
+#' to "logit".
 #'
 #' @return produces a dataframe of results
 #'
@@ -57,7 +57,8 @@
 #'
 #' @author Belinda Phipson
 #'
-#' @seealso \code{\link{lmFit}}, \code{\link{eBayes}},
+#' @seealso \code{\link{propeller.ttest}} \code{\link{propeller.anova}} 
+#' \code{\link{lmFit}}, \code{\link{eBayes}},
 #' \code{\link{getTransformedProps}}
 #'
 #' @references Smyth, G.K. (2004). Linear models and empirical Bayes methods
@@ -112,7 +113,7 @@
 #'   robust = FALSE, trend = FALSE, transform="asin")
 #'
 propeller <- function(x=NULL, clusters=NULL, sample=NULL, group=NULL,
-                      trend=FALSE, robust=TRUE, transform="asin")
+                      trend=FALSE, robust=TRUE, transform="logit")
 #    Testing for differences in cell type proportions
 #    Belinda Phipson
 #    29 July 2019
@@ -138,7 +139,7 @@ propeller <- function(x=NULL, clusters=NULL, sample=NULL, group=NULL,
         group <- y$group
     }
     
-    if(is.null(transform)) transform <- "asin"
+    if(is.null(transform)) transform <- "logit"
 
     # Get transformed proportions
     prop.list <- getTransformedProps(clusters, sample, transform)

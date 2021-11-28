@@ -1,8 +1,8 @@
 #' Performs F-tests for transformed cell type proportions
 #'
 #' This function is called by \code{propeller} and performs F-tests between
-#' multiple experimental groups or conditions (> 2) on arcsin square root
-#' transformed cell type proportions.
+#' multiple experimental groups or conditions (> 2) on transformed cell type 
+#' proportions.
 #'
 #' In order to run this function, the user needs to run the
 #' \code{getTransformedProps} function first. The output from

@@ -13,6 +13,8 @@
 #' or counts scale. Default is FALSE.
 #' @param prior.count The prior count to add if the data is log2 normalised.
 #' Default is a small count of 0.5.
+#' @param lib.size a vector of library sizes to be used during the normalisation
+#' step. Default is NULL and will be computed from the counts matrix.
 #'
 #' @return a matrix of normalised counts
 #' 
@@ -38,7 +40,7 @@
 #' boxplot(norm.y, main="Normalised counts")
 #' boxplot(lnorm.y, main="Log2-normalised counts")
 #'
-normCounts <-function(x, log=FALSE, prior.count=0.5)
+normCounts <-function(x, log=FALSE, prior.count=0.5, lib.size=NULL)
   # Function to normalise to median library size instead of counts per million
   # Input is DGEList object or matrix
   # Belinda Phipson
@@ -50,7 +52,19 @@ normCounts <-function(x, log=FALSE, prior.count=0.5)
   }
   else{
     counts <- as.matrix(x)
-    lib.size <- colSums(counts)
+    if(is.null(lib.size)){
+      lib.size <- colSums(counts)
+    }
+    else{
+      if(length(lib.size)==ncol(x))
+        lib.size <- as.vector(lib.size)
+      else{
+        message("Vector of library sizes does not match dimensions of input 
+                data. Calculating library sizes from the counts matrix.")
+        lib.size <- colSums(counts)
+      }
+    }
+      
   }
 
   M <- median(lib.size)

@@ -1,3 +1,7 @@
+# speckle 0.0.3
+* Added functions to classify cells as male or female
+* Change propeller transform default to logit
+
 # speckle 0.0.2
 * Added functions to plot the mean variance relationship of the cell type
 counts and proportions

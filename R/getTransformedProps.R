@@ -71,7 +71,7 @@
 getTransformedProps <- function(clusters=clusters, sample=sample, 
                                 transform=NULL)
 {
-  if(is.null(transform)) transform <- "asin"
+  if(is.null(transform)) transform <- "logit"
   
   tab <- table(sample, clusters)
   props <- tab/rowSums(tab)

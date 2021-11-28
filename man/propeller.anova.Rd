@@ -36,8 +36,8 @@ produces a dataframe of results
 }
 \description{
 This function is called by \code{propeller} and performs F-tests between
-multiple experimental groups or conditions (> 2) on arcsin square root
-transformed cell type proportions.
+multiple experimental groups or conditions (> 2) on transformed cell type 
+proportions.
 }
 \details{
 In order to run this function, the user needs to run the

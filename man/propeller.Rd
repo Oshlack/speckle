@@ -11,7 +11,7 @@ propeller(
   group = NULL,
   trend = FALSE,
   robust = TRUE,
-  transform = "asin"
+  transform = "logit"
 )
 }
 \arguments{
@@ -40,7 +40,7 @@ the variances}
 
 \item{transform}{a character scalar specifying which transformation of the 
 proportions to perform. Possible values include "asin" or "logit". Defaults
-to "asin".}
+to "logit".}
 }
 \value{
 produces a dataframe of results
@@ -129,6 +129,7 @@ rate: a practical and powerful approach to multiple testing. \emph{Journal
 of the Royal Statistical Society Series}, B, \bold{57}, 289-300.
 }
 \seealso{
+\code{\link{propeller.ttest}} \code{\link{propeller.anova}} 
 \code{\link{lmFit}}, \code{\link{eBayes}},
 \code{\link{getTransformedProps}}
 }
