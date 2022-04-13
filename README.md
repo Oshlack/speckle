@@ -4,6 +4,12 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
+*Please note that the speckle package has moved to the following repository:
+[https://github.com/phipsonlab]{https://github.com/phipsonlab}. Version 0.0.3 of
+the package will remain here but will no longer be actively updated/maintained. 
+This version of the package contains the propeller and classifySex functions.* 
+
+
 The speckle package currently contains functions to analyse differences in cell 
 type proportions in single cell RNA-seq data, and to classify cells as male or 
 female. As our research into specialised 
