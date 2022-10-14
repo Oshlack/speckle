@@ -9,7 +9,14 @@ https://github.com/phipsonlab. Version 0.0.3 of
 the package will remain here but will no longer be actively updated/maintained. 
 This version of the package contains the propeller and classifySex functions.** 
 
+## Citation
+The propeller method has now been accepted for publicaton in *Bioinformatics*. 
+Please use the following citation when using propeller: \
+Belinda Phipson, Choon Boon Sim, Enzo R Porrello, Alex W Hewitt, Joseph Powell, Alicia Oshlack, propeller: testing for differences in cell type proportions in single cell data, *Bioinformatics*, 2022;, btac582, [https://doi.org/10.1093/bioinformatics/btac582](https://doi.org/10.1093/bioinformatics/btac582)
 
+The preprint is available on [bioRxiv](https://www.biorxiv.org/content/10.1101/2021.11.28.470236v2.full).
+
+## Introduction
 The speckle package currently contains functions to analyse differences in cell 
 type proportions in single cell RNA-seq data, and to classify cells as male or 
 female. As our research into specialised 
